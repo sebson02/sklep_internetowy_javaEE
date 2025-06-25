@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Szczegóły użytkownika</title>
+</head>
+<body>
+    <div th:replace="~{layout/main :: html(title='Szczegóły użytkownika: ' + ${user.username}, content=~{::content})}">
+        <div th:fragment="content">
+            <div class="row">
+                <div class="col-md-8 mx-auto">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h3 class="mb-0">Szczegóły użytkownika</h3>
+                            <div>
+                                <span class="badge" 
+                                      th:classappend="${user.role == 'ADMIN'} ? 'bg-danger' : (${user.role == 'MANAGER'} ? 'bg-warning' : 'bg-info')" 
+                                      th:text="${user.role}">ROLE</span>
+                                <span class="badge bg-success ms-1" th:if="${user.enabled}">Aktywny</span>
+                                <span class="badge bg-danger ms-1" th:unless="${user.enabled}">Nieaktywny</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-4">
+                                <div class="col-md-4 text-md-end fw-bold">ID:</div>
+                                <div class="col-md-8" th:text="${user.id}">1</div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-4 text-md-end fw-bold">Nazwa użytkownika:</div>
+                                <div class="col-md-8" th:text="${user.username}">username</div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-4 text-md-end fw-bold">Email:</div>
+                                <div class="col-md-8" th:text="${user.email}">email@example.com</div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-4 text-md-end fw-bold">Imię:</div>
+                                <div class="col-md-8" th:text="${user.firstName ?: '-'}">Imię</div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-4 text-md-end fw-bold">Nazwisko:</div>
+                                <div class="col-md-8" th:text="${user.lastName ?: '-'}">Nazwisko</div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-4 text-md-end fw-bold">Data utworzenia:</div>
+                                <div class="col-md-8" th:text="${#temporals.format(user.createdAt, 'dd.MM.yyyy HH:mm')}">01.01.2025 12:00</div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="d-flex justify-content-between">
+                                <a th:href="@{/users}" class="btn btn-outline-primary">
+                                    <i class="bi bi-arrow-left"></i> Powrót do listy
+                                </a>
+                                <div>
+                                    <a th:href="@{/users/{id}/edit(id=${user.id})}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-pencil"></i> Edytuj
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger ms-2" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                        <i class="bi bi-trash"></i> Usuń
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Orders Section -->
+                    <div class="mt-5">
+                        <h3 class="mb-4">Zamówienia użytkownika</h3>
+                        <div th:if="${not #lists.isEmpty(orders)}">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Data</th>
+                                            <th>Status</th>
+                                            <th>Liczba produktów</th>
+                                            <th>Akcje</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="order : ${orders}">
+                                            <td th:text="${order.id}">1</td>
+                                            <td th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}">01.01.2025 12:00</td>
+                                            <td>
+                                                <span class="badge" 
+                                                      th:classappend="${order.status == 'PENDING'} ? 'bg-warning' : 
+                                                                     (${order.status == 'CONFIRMED'} ? 'bg-primary' : 
+                                                                     (${order.status == 'SHIPPED'} ? 'bg-info' : 
+                                                                     (${order.status == 'DELIVERED'} ? 'bg-success' : 'bg-danger')))" 
+                                                      th:text="${order.status}">STATUS</span>
+                                            </td>
+                                            <td th:text="${#lists.size(order.orderProducts)}">0</td>
+                                            <td>
+                                                <a th:href="@{/orders/{id}(id=${order.id})}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i> Szczegóły
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="alert alert-info" th:if="${#lists.isEmpty(orders)}">
+                            <p>Brak zamówień dla tego użytkownika.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Confirmation Modal -->
+            <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteModalLabel">Potwierdź usunięcie</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Czy na pewno chcesz usunąć użytkownika <strong th:text="${user.username}">username</strong>?
+                            Ta operacja jest nieodwracalna.
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                            <form th:action="@{/users/{id}/delete(id=${user.id})}" method="post">
+                                <button type="submit" class="btn btn-danger">Usuń</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Formularz użytkownika</title>
+</head>
+<body>
+    <div th:replace="~{layout/main :: html(title=${user.id == null ? 'Dodaj nowego użytkownika' : 'Edytuj użytkownika'}, content=~{::content})}">
+        <div th:fragment="content">
+            <div class="row">
+                <div class="col-md-8 mx-auto">
+                    <h1 class="mb-4" th:text="${user.id == null ? 'Dodaj nowego użytkownika' : 'Edytuj użytkownika'}">Formularz użytkownika</h1>
+                    
+                    <form th:action="${user.id == null ? '/users/add' : '/users/' + user.id + '/update'}" 
+                          method="post" class="needs-validation" novalidate>
+                        
+                        <!-- Hidden ID field for updates -->
+                        <input type="hidden" name="id" th:value="${user.id}" />
+                        
+                        <!-- Username Field -->
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Nazwa użytkownika</label>
+                            <input type="text" class="form-control" id="username" name="username" th:value="${user.username}" 
+                                   required minlength="3" maxlength="50" th:readonly="${user.id != null}">
+                            <div class="invalid-feedback">
+                                Nazwa użytkownika jest wymagana (3-50 znaków).
+                            </div>
+                            <div class="form-text" th:if="${user.id != null}">
+                                Nazwa użytkownika nie może być zmieniona po utworzeniu konta.
+                            </div>
+                        </div>
+                        
+                        <!-- Email Field -->
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" th:value="${user.email}" required>
+                            <div class="invalid-feedback">
+                                Proszę podać poprawny adres email.
+                            </div>
+                        </div>
+                        
+                        <!-- Password Field (only for new users) -->
+                        <div class="mb-3" th:if="${user.id == null}">
+                            <label for="password" class="form-label">Hasło</label>
+                            <input type="password" class="form-control" id="password" name="password" required minlength="6">
+                            <div class="invalid-feedback">
+                                Hasło musi mieć co najmniej 6 znaków.
+                            </div>
+                        </div>
+                        
+                        <!-- First Name Field -->
+                        <div class="mb-3">
+                            <label for="firstName" class="form-label">Imię</label>
+                            <input type="text" class="form-control" id="firstName" name="firstName" th:value="${user.firstName}">
+                        </div>
+                        
+                        <!-- Last Name Field -->
+                        <div class="mb-3">
+                            <label for="lastName" class="form-label">Nazwisko</label>
+                            <input type="text" class="form-control" id="lastName" name="lastName" th:value="${user.lastName}">
+                        </div>
+                        
+                        <!-- Role Field -->
+                        <div class="mb-3">
+                            <label for="role" class="form-label">Rola</label>
+                            <select class="form-select" id="role" name="role" required>
+                                <option value="CUSTOMER" th:selected="${user.role == 'CUSTOMER'}">Klient</option>
+                                <option value="MANAGER" th:selected="${user.role == 'MANAGER'}">Menedżer</option>
+                                <option value="ADMIN" th:selected="${user.role == 'ADMIN'}">Administrator</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Enabled Field -->
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="enabled" name="enabled" 
+                                   th:checked="${user.enabled == null || user.enabled}">
+                            <label class="form-check-label" for="enabled">Konto aktywne</label>
+                        </div>
+                        
+                        <!-- Submit and Cancel Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a th:href="@{/users}" class="btn btn-secondary">Anuluj</a>
+                            <button type="submit" class="btn btn-primary">
+                                <span th:text="${user.id == null ? 'Dodaj użytkownika' : 'Zapisz zmiany'}">Zapisz</span>
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Change Password Form (only for existing users) -->
+                    <div th:if="${user.id != null}" class="mt-5">
+                        <h3 class="mb-4">Zmiana hasła</h3>
+                        <form th:action="@{/users/{id}/password(id=${user.id})}" method="post" class="needs-validation" novalidate>
+                            <div class="mb-3">
+                                <label for="currentPassword" class="form-label">Aktualne hasło</label>
+                                <input type="password" class="form-control" id="currentPassword" name="currentPassword" required>
+                                <div class="invalid-feedback">
+                                    Aktualne hasło jest wymagane.
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="newPassword" class="form-label">Nowe hasło</label>
+                                <input type="password" class="form-control" id="newPassword" name="newPassword" required minlength="6">
+                                <div class="invalid-feedback">
+                                    Nowe hasło musi mieć co najmniej 6 znaków.
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="confirmPassword" class="form-label">Potwierdź nowe hasło</label>
+                                <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                                <div class="invalid-feedback">
+                                    Hasła muszą być identyczne.
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-warning">Zmień hasło</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Password validation script -->
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const newPassword = document.getElementById('newPassword');
+            const confirmPassword = document.getElementById('confirmPassword');
+            
+            if (form && newPassword && confirmPassword) {
+                form.addEventListener('submit', function(event) {
+                    if (newPassword.value !== confirmPassword.value) {
+                        confirmPassword.setCustomValidity('Hasła muszą być identyczne');
+                    } else {
+                        confirmPassword.setCustomValidity('');
+                    }
+                });
+                
+                confirmPassword.addEventListener('input', function() {
+                    if (newPassword.value !== confirmPassword.value) {
+                        confirmPassword.setCustomValidity('Hasła muszą być identyczne');
+                    } else {
+                        confirmPassword.setCustomValidity('');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

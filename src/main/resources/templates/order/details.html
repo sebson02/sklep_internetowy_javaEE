@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Szczegóły zamówienia</title>
+</head>
+<body>
+    <div th:replace="~{layout/main :: html(title='Szczegóły zamówienia #' + ${order.id}, content=~{::content})}">
+        <div th:fragment="content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Szczegóły zamówienia #<span th:text="${order.id}">1</span></h1>
+                <div>
+                    <a th:href="@{/orders}" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-left"></i> Powrót do listy zamówień
+                    </a>
+                    <a th:href="@{/orders/{id}/edit(id=${order.id})}" class="btn btn-outline-secondary ms-2">
+                        <i class="bi bi-pencil"></i> Edytuj
+                    </a>
+                </div>
+            </div>
+
+            <!-- Order Status -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Status zamówienia</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge" 
+                                  th:classappend="${order.status == 'PENDING'} ? 'bg-warning' : 
+                                                 (${order.status == 'CONFIRMED'} ? 'bg-primary' : 
+                                                 (${order.status == 'SHIPPED'} ? 'bg-info' : 
+                                                 (${order.status == 'DELIVERED'} ? 'bg-success' : 'bg-danger')))" 
+                                  th:text="${order.status}">STATUS</span>
+                            <span class="ms-2" th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}">01.01.2025 12:00</span>
+                        </div>
+                        <div sec:authorize="hasAnyRole('ADMIN', 'MANAGER')">
+                            <form th:action="@{/orders/{id}/status(id=${order.id})}" method="post" class="d-flex">
+                                <select name="status" class="form-select me-2" style="width: auto;">
+                                    <option value="PENDING" th:selected="${order.status == 'PENDING'}">Oczekujące</option>
+                                    <option value="CONFIRMED" th:selected="${order.status == 'CONFIRMED'}">Potwierdzone</option>
+                                    <option value="SHIPPED" th:selected="${order.status == 'SHIPPED'}">Wysłane</option>
+                                    <option value="DELIVERED" th:selected="${order.status == 'DELIVERED'}">Dostarczone</option>
+                                    <option value="CANCELLED" th:selected="${order.status == 'CANCELLED'}">Anulowane</option>
+                                </select>
+                                <button type="submit" class="btn btn-primary">Aktualizuj status</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Informacje o kliencie</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Klient:</strong> <span th:text="${order.user.username}">username</span></p>
+                            <p><strong>Email:</strong> <span th:text="${order.user.email}">email@example.com</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Imię i nazwisko:</strong> <span th:text="${order.user.firstName + ' ' + order.user.lastName}">Jan Kowalski</span></p>
+                            <p><strong>Telefon:</strong> <span th:text="${order.user.phoneNumber ?: 'Brak'}">123456789</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Items -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Produkty w zamówieniu</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Produkt</th>
+                                    <th>Cena jednostkowa</th>
+                                    <th>Ilość</th>
+                                    <th class="text-end">Suma</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="item : ${order.orderProducts}">
+                                    <td>
+                                        <a th:href="@{/products/{id}(id=${item.product.id})}" th:text="${item.product.name}">Nazwa produktu</a>
+                                    </td>
+                                    <td th:text="${#numbers.formatDecimal(item.price, 1, 2) + ' zł'}">0.00 zł</td>
+                                    <td th:text="${item.quantity}">1</td>
+                                    <td class="text-end" th:text="${#numbers.formatDecimal(item.price * item.quantity, 1, 2) + ' zł'}">0.00 zł</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="3" class="text-end">Suma:</th>
+                                    <th class="text-end" th:text="${#numbers.formatDecimal(orderTotal, 1, 2) + ' zł'}">0.00 zł</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Order Button -->
+            <div class="text-end mb-4" sec:authorize="hasRole('ADMIN')">
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    <i class="bi bi-trash"></i> Usuń zamówienie
+                </button>
+            </div>
+
+            <!-- Delete Confirmation Modal -->
+            <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Potwierdź usunięcie</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Czy na pewno chcesz usunąć zamówienie #<strong th:text="${order.id}">1</strong>?
+                            Ta operacja jest nieodwracalna.
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                            <form th:action="@{/orders/{id}/delete(id=${order.id})}" method="post">
+                                <button type="submit" class="btn btn-danger">Usuń</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript to connect with REST API -->
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get order ID from the page
+            const orderId = /*[[${order.id}]]*/ '1';
+            
+            // Function to fetch order details from API
+            function fetchOrderDetails() {
+                fetch(`/api/orders/${orderId}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch order details');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Order details:', data);
+                        // You can update the UI with the fetched data if needed
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+            }
+            
+            // Call the function to fetch order details
+            // fetchOrderDetails();
+            
+            // Example of updating order status via API
+            const updateStatusForm = document.querySelector('form[action*="/orders/"][action*="/status"]');
+            if (updateStatusForm) {
+                updateStatusForm.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    
+                    const status = this.querySelector('select[name="status"]').value;
+                    
+                    fetch(`/api/orders/${orderId}/status?status=${status}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to update order status');
+                        }
+                        return response.text();
+                    })
+                    .then(data => {
+                        console.log('Status updated:', data);
+                        // Reload the page to show the updated status
+                        window.location.reload();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Failed to update order status. Please try again.');
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>

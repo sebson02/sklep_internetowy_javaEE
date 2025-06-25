@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Zamówienia użytkownika</title>
+</head>
+<body>
+    <div th:replace="~{layout/main :: html(title='Zamówienia użytkownika ' + ${user.username}, content=~{::content})}">
+        <div th:fragment="content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Zamówienia użytkownika <span th:text="${user.username}">username</span></h1>
+                <div>
+                    <a th:href="@{/users/{id}(id=${user.id})}" class="btn btn-outline-primary">
+                        <i class="bi bi-person"></i> Profil użytkownika
+                    </a>
+                    <a th:href="@{/orders}" class="btn btn-outline-secondary ms-2">
+                        <i class="bi bi-list"></i> Wszystkie zamówienia
+                    </a>
+                </div>
+            </div>
+
+            <!-- User Info Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Informacje o użytkowniku</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Email:</strong> <span th:text="${user.email}">email@example.com</span></p>
+                            <p><strong>Imię i nazwisko:</strong> <span th:text="${user.firstName + ' ' + user.lastName}">Jan Kowalski</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Telefon:</strong> <span th:text="${user.phoneNumber ?: 'Brak'}">123456789</span></p>
+                            <p><strong>Liczba zamówień:</strong> <span th:text="${#lists.size(orders)}">0</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders Table -->
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" th:if="${not #lists.isEmpty(orders)}">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Data zamówienia</th>
+                            <th>Status</th>
+                            <th>Liczba produktów</th>
+                            <th>Wartość</th>
+                            <th>Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="order : ${orders}">
+                            <td th:text="${order.id}">1</td>
+                            <td th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}">01.01.2025 12:00</td>
+                            <td>
+                                <span class="badge" 
+                                      th:classappend="${order.status == 'PENDING'} ? 'bg-warning' : 
+                                                     (${order.status == 'CONFIRMED'} ? 'bg-primary' : 
+                                                     (${order.status == 'SHIPPED'} ? 'bg-info' : 
+                                                     (${order.status == 'DELIVERED'} ? 'bg-success' : 'bg-danger')))" 
+                                      th:text="${order.status}">STATUS</span>
+                            </td>
+                            <td th:text="${#lists.size(order.orderProducts)}">0</td>
+                            <td th:text="${#numbers.formatDecimal(orderTotals.get(order.id), 1, 2) + ' zł'}">0.00 zł</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a th:href="@{/orders/{id}(id=${order.id})}" class="btn btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a th:href="@{/orders/{id}/edit(id=${order.id})}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty State -->
+            <div class="alert alert-info" th:if="${#lists.isEmpty(orders)}">
+                <p>Użytkownik nie ma jeszcze żadnych zamówień.</p>
+            </div>
+
+            <!-- Pagination -->
+            <nav th:if="${totalPages > 1}">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                        <a class="page-link" th:href="@{/orders/user/{userId}(userId=${user.id}, page=${currentPage - 1}, size=${size})}">&laquo;</a>
+                    </li>
+                    <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}" 
+                        th:classappend="${currentPage == i} ? 'active'">
+                        <a class="page-link" th:href="@{/orders/user/{userId}(userId=${user.id}, page=${i}, size=${size})}" 
+                           th:text="${i + 1}">1</a>
+                    </li>
+                    <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+                        <a class="page-link" th:href="@{/orders/user/{userId}(userId=${user.id}, page=${currentPage + 1}, size=${size})}">&raquo;</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- JavaScript to connect with REST API -->
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get user ID from the page
+            const userId = /*[[${user.id}]]*/ '1';
+            
+            // Function to fetch user orders from API
+            function fetchUserOrders() {
+                fetch(`/api/orders/user/${userId}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch user orders');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('User orders:', data);
+                        // You can update the UI with the fetched data if needed
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+            }
+            
+            // Call the function to fetch user orders
+            // fetchUserOrders();
+        });
+    </script>
+</body>
+</html>

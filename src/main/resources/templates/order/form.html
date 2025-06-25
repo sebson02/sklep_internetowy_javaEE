@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Formularz zamówienia</title>
+</head>
+<body>
+    <div th:replace="~{layout/main :: html(title=${isNew ? 'Nowe zamówienie' : 'Edycja zamówienia #' + order.id}, content=~{::content})}">
+        <div th:fragment="content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 th:text="${isNew ? 'Nowe zamówienie' : 'Edycja zamówienia #' + order.id}">Formularz zamówienia</h1>
+                <a th:href="@{/orders}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Powrót do listy zamówień
+                </a>
+            </div>
+
+            <form th:action="@{/orders}" method="post" th:object="${order}" class="needs-validation" novalidate>
+                <input type="hidden" th:field="*{id}" />
+
+                <!-- User Selection -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Klient</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="user" class="form-label">Wybierz klienta</label>
+                            <select id="user" th:field="*{user}" class="form-select" required>
+                                <option value="">-- Wybierz klienta --</option>
+                                <option th:each="user : ${users}" 
+                                        th:value="${user.id}" 
+                                        th:text="${user.username + ' (' + user.email + ')'}">
+                                    User Name (user@example.com)
+                                </option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Proszę wybrać klienta.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Status -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Status zamówienia</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select id="status" th:field="*{status}" class="form-select" required>
+                                <option value="PENDING">Oczekujące</option>
+                                <option value="CONFIRMED">Potwierdzone</option>
+                                <option value="SHIPPED">Wysłane</option>
+                                <option value="DELIVERED">Dostarczone</option>
+                                <option value="CANCELLED">Anulowane</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Submit Button -->
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Zapisz zamówienie
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript to connect with REST API -->
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            const isNew = /*[[${isNew}]]*/ false;
+            const orderId = /*[[${order.id}]]*/ null;
+
+            // Form submission handler
+            const orderForm = document.querySelector('form[action*="/orders"]');
+            if (orderForm) {
+                orderForm.addEventListener('submit', function(event) {
+                    event.preventDefault();
+
+                    // Get form data
+                    const formData = new FormData(this);
+                    const orderData = {
+                        id: formData.get('id') || null,
+                        user: { id: formData.get('user') },
+                        status: formData.get('status')
+                    };
+
+                    // API endpoint and method
+                    const url = isNew ? '/api/orders' : `/api/orders/${orderId}`;
+                    const method = isNew ? 'POST' : 'PUT';
+
+                    // Send request to API
+                    fetch(url, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(orderData)
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to save order');
+                        }
+                        return response.text();
+                    })
+                    .then(data => {
+                        console.log('Order saved:', data);
+                        // Redirect to orders list
+                        window.location.href = '/orders';
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Failed to save order. Please try again.');
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>

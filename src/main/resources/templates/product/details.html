@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Szczegóły produktu</title>
+</head>
+<body>
+    <div th:replace="~{layout/main :: html(title=${product.name}, content=~{::content})}">
+        <div th:fragment="content">
+            <div class="row">
+                <!-- Product Image -->
+                <div class="col-md-5">
+                    <img src="https://via.placeholder.com/500x400" alt="Product Image" class="img-fluid rounded">
+                </div>
+                
+                <!-- Product Details -->
+                <div class="col-md-7">
+                    <h1 th:text="${product.name}">Nazwa produktu</h1>
+                    
+                    <div class="mb-3">
+                        <span class="product-price fs-3" th:text="${#numbers.formatDecimal(product.price, 1, 2) + ' zł'}">0.00 zł</span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <span th:if="${product.stockQuantity > 0}" class="badge bg-success">Dostępny</span>
+                        <span th:if="${product.stockQuantity == 0}" class="badge bg-danger">Niedostępny</span>
+                        <span class="ms-2" th:text="'W magazynie: ' + ${product.stockQuantity} + ' szt.'">W magazynie: 0 szt.</span>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <p th:text="${product.description}">Opis produktu</p>
+                    </div>
+                    
+                    <!-- Add to Cart Form -->
+                    <form th:if="${product.stockQuantity > 0}" th:action="@{/cart/add}" method="post" class="mb-4">
+                        <input type="hidden" name="productId" th:value="${product.id}">
+                        <div class="input-group mb-3" style="max-width: 200px;">
+                            <button class="btn btn-outline-secondary decrement-btn" type="button">-</button>
+                            <input type="number" name="quantity" id="quantity" class="form-control text-center quantity-input" 
+                                   value="1" min="1" th:max="${product.stockQuantity}">
+                            <button class="btn btn-outline-secondary increment-btn" type="button">+</button>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-cart-plus"></i> Dodaj do koszyka
+                        </button>
+                    </form>
+                    
+                    <!-- Admin/Manager Actions -->
+                    <div class="mt-4" sec:authorize="hasAnyRole('ADMIN', 'MANAGER')">
+                        <a th:href="@{/products/{id}/edit(id=${product.id})}" class="btn btn-outline-secondary">
+                            <i class="bi bi-pencil"></i> Edytuj produkt
+                        </a>
+                        <button type="button" class="btn btn-outline-danger ms-2" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="bi bi-trash"></i> Usuń produkt
+                        </button>
+                    </div>
+                    
+                    <!-- Back Button -->
+                    <div class="mt-4">
+                        <a th:href="@{/products}" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left"></i> Powrót do listy produktów
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Product Created Date -->
+            <div class="mt-4">
+                <small class="text-muted" th:text="'Dodano: ' + ${#temporals.format(product.createdAt, 'dd.MM.yyyy HH:mm')}">
+                    Dodano: 01.01.2025 12:00
+                </small>
+            </div>
+            
+            <!-- Delete Confirmation Modal -->
+            <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteModalLabel">Potwierdź usunięcie</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Czy na pewno chcesz usunąć produkt <strong th:text="${product.name}">Nazwa produktu</strong>?
+                            Ta operacja jest nieodwracalna.
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                            <form th:action="@{/products/{id}/delete(id=${product.id})}" method="post">
+                                <button type="submit" class="btn btn-danger">Usuń</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

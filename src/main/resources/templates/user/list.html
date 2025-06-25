@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista użytkowników</title>
+</head>
+<body>
+    <div th:replace="~{layout/main :: html(title='Lista użytkowników', content=~{::content})}">
+        <div th:fragment="content">
+            <h1 class="mb-4">Lista użytkowników</h1>
+
+            <!-- Admin Actions -->
+            <div class="mb-4" sec:authorize="hasRole('ADMIN')">
+                <a th:href="@{/users/new}" class="btn btn-primary">
+                    <i class="bi bi-person-plus"></i> Dodaj nowego użytkownika
+                </a>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <form th:action="@{/users}" method="get" class="d-flex">
+                        <input type="text" name="search" class="form-control me-2" placeholder="Szukaj użytkowników..." 
+                               th:value="${param.search}">
+                        <button type="submit" class="btn btn-outline-primary">Szukaj</button>
+                    </form>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex justify-content-end">
+                        <select class="form-select" style="max-width: 200px;" name="role" id="roleFilter" 
+                                onchange="window.location.href=this.value">
+                            <option value="/users" th:selected="${param.role == null}">Wszystkie role</option>
+                            <option value="/users?role=ADMIN" th:selected="${param.role == 'ADMIN'}">Administratorzy</option>
+                            <option value="/users?role=MANAGER" th:selected="${param.role == 'MANAGER'}">Menedżerowie</option>
+                            <option value="/users?role=CUSTOMER" th:selected="${param.role == 'CUSTOMER'}">Klienci</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" th:if="${not #lists.isEmpty(users)}">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Nazwa użytkownika</th>
+                            <th>Email</th>
+                            <th>Imię</th>
+                            <th>Nazwisko</th>
+                            <th>Rola</th>
+                            <th>Data utworzenia</th>
+                            <th>Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="user : ${users}">
+                            <td th:text="${user.id}">1</td>
+                            <td th:text="${user.username}">username</td>
+                            <td th:text="${user.email}">email@example.com</td>
+                            <td th:text="${user.firstName ?: '-'}">Imię</td>
+                            <td th:text="${user.lastName ?: '-'}">Nazwisko</td>
+                            <td>
+                                <span class="badge" 
+                                      th:classappend="${user.role == 'ADMIN'} ? 'bg-danger' : (${user.role == 'MANAGER'} ? 'bg-warning' : 'bg-info')" 
+                                      th:text="${user.role}">ROLE</span>
+                            </td>
+                            <td th:text="${#temporals.format(user.createdAt, 'dd.MM.yyyy HH:mm')}">01.01.2025 12:00</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a th:href="@{/users/{id}(id=${user.id})}" class="btn btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a th:href="@{/users/{id}/edit(id=${user.id})}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger" 
+                                            data-bs-toggle="modal" th:data-bs-target="${'#deleteModal-' + user.id}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Delete Modal for each user -->
+                                <div class="modal fade" th:id="${'deleteModal-' + user.id}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Potwierdź usunięcie</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Czy na pewno chcesz usunąć użytkownika <strong th:text="${user.username}">username</strong>?
+                                                Ta operacja jest nieodwracalna.
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                                                <form th:action="@{/users/{id}/delete(id=${user.id})}" method="post">
+                                                    <button type="submit" class="btn btn-danger">Usuń</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty State -->
+            <div class="alert alert-info" th:if="${#lists.isEmpty(users)}">
+                <p>Brak użytkowników do wyświetlenia.</p>
+            </div>
+
+            <!-- Pagination -->
+            <nav th:if="${totalPages > 1}">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                        <a class="page-link" th:href="@{/users(page=${currentPage - 1}, size=${size}, search=${param.search}, role=${param.role})}">&laquo;</a>
+                    </li>
+                    <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}" 
+                        th:classappend="${currentPage == i} ? 'active'">
+                        <a class="page-link" th:href="@{/users(page=${i}, size=${size}, search=${param.search}, role=${param.role})}" 
+                           th:text="${i + 1}">1</a>
+                    </li>
+                    <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+                        <a class="page-link" th:href="@{/users(page=${currentPage + 1}, size=${size}, search=${param.search}, role=${param.role})}">&raquo;</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</body>
+</html>

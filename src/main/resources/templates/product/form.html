@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Formularz produktu</title>
+</head>
+<body>
+    <div th:replace="~{layout/main :: html(title=${product.id == null ? 'Dodaj nowy produkt' : 'Edytuj produkt'}, content=~{::content})}">
+        <div th:fragment="content">
+            <div class="row">
+                <div class="col-md-8 mx-auto">
+                    <h1 class="mb-4" th:text="${product.id == null ? 'Dodaj nowy produkt' : 'Edytuj produkt'}">Formularz produktu</h1>
+
+                    <form th:action="${product.id == null ? '/products/add' : '/products/' + product.id + '/update'}" 
+                          method="post" class="needs-validation" novalidate>
+
+                        <!-- Hidden ID field for updates -->
+                        <input type="hidden" name="id" th:value="${product.id}" />
+
+                        <!-- Name Field -->
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nazwa produktu</label>
+                            <input type="text" class="form-control" id="name" name="name" th:value="${product.name}" 
+                                   required minlength="3" maxlength="100">
+                            <div class="invalid-feedback">
+                                Nazwa produktu jest wymagana (3-100 znaków).
+                            </div>
+                        </div>
+
+                        <!-- Description Field -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Opis produktu</label>
+                            <textarea class="form-control" id="description" name="description" 
+                                      rows="5" maxlength="1000" th:text="${product.description}"></textarea>
+                        </div>
+
+                        <!-- Price Field -->
+                        <div class="mb-3">
+                            <label for="price" class="form-label">Cena (zł)</label>
+                            <input type="number" class="form-control" id="price" name="price" th:value="${product.price}" 
+                                   required min="0.01" step="0.01">
+                            <div class="invalid-feedback">
+                                Cena musi być większa od 0.
+                            </div>
+                        </div>
+
+                        <!-- Stock Quantity Field -->
+                        <div class="mb-3">
+                            <label for="stockQuantity" class="form-label">Ilość w magazynie</label>
+                            <input type="number" class="form-control" id="stockQuantity" name="stockQuantity" 
+                                   th:value="${product.stockQuantity}" required min="0">
+                            <div class="invalid-feedback">
+                                Ilość w magazynie nie może być ujemna.
+                            </div>
+                        </div>
+
+                        <!-- Image Upload Field (for future implementation) -->
+                        <div class="mb-3">
+                            <label for="imageFile" class="form-label">Zdjęcie produktu</label>
+                            <input type="file" class="form-control" id="imageFile" disabled>
+                            <div class="form-text text-muted">Funkcja dodawania zdjęć będzie dostępna wkrótce.</div>
+                        </div>
+
+                        <!-- Submit and Cancel Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a th:href="@{/products}" class="btn btn-secondary">Anuluj</a>
+                            <button type="submit" class="btn btn-primary">
+                                <span th:text="${product.id == null ? 'Dodaj produkt' : 'Zapisz zmiany'}">Zapisz</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

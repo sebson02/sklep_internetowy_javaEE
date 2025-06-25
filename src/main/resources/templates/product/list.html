@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista produktów</title>
+</head>
+<body>
+    <div th:replace="~{layout/main :: html(title='Lista produktów', content=~{::content})}">
+        <div th:fragment="content">
+            <h1 class="mb-4">Lista produktów</h1>
+
+            <!-- Admin/Manager Actions -->
+            <div class="mb-4" sec:authorize="hasAnyRole('ADMIN', 'MANAGER')">
+                <a th:href="@{/products/new}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Dodaj nowy produkt
+                </a>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <form th:action="@{/products}" method="get" class="d-flex">
+                        <input type="text" name="search" class="form-control me-2" placeholder="Szukaj produktów..." 
+                               th:value="${param.search}">
+                        <button type="submit" class="btn btn-outline-primary">Szukaj</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="row" th:if="${not #lists.isEmpty(products)}">
+                <div class="col-md-4 mb-4" th:each="product : ${products}">
+                    <div class="card h-100">
+                        <img class="card-img-top" src="https://via.placeholder.com/300x200" alt="Product Image">
+                        <div class="card-body">
+                            <h5 class="card-title" th:text="${product.name}">Nazwa produktu</h5>
+                            <p class="card-text text-truncate" th:text="${product.description}">Opis produktu</p>
+                            <p class="product-price" th:text="${#numbers.formatDecimal(product.price, 1, 2) + ' zł'}">0.00 zł</p>
+                            <p class="text-muted" th:text="'Dostępność: ' + ${product.stockQuantity} + ' szt.'">Dostępność: 0 szt.</p>
+                            <div class="d-flex justify-content-between">
+                                <a th:href="@{/products/{id}(id=${product.id})}" class="btn btn-outline-primary">Szczegóły</a>
+                                <div sec:authorize="hasAnyRole('ADMIN', 'MANAGER')">
+                                    <a th:href="@{/products/{id}/edit(id=${product.id})}" class="btn btn-outline-secondary">Edytuj</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div class="alert alert-info" th:if="${#lists.isEmpty(products)}">
+                <p>Brak produktów do wyświetlenia.</p>
+            </div>
+
+            <!-- Pagination -->
+            <nav th:if="${totalPages > 1}">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                        <a class="page-link" th:href="@{/products(page=${currentPage - 1}, size=${size}, search=${param.search})}">&laquo;</a>
+                    </li>
+                    <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}" 
+                        th:classappend="${currentPage == i} ? 'active'">
+                        <a class="page-link" th:href="@{/products(page=${i}, size=${size}, search=${param.search})}" 
+                           th:text="${i + 1}">1</a>
+                    </li>
+                    <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+                        <a class="page-link" th:href="@{/products(page=${currentPage + 1}, size=${size}, search=${param.search})}">&raquo;</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</body>
+</html>
