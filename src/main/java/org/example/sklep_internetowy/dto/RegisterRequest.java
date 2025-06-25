@@ -22,6 +22,7 @@ public class RegisterRequest {
     private String firstName;
     private String lastName;
     private User.Role role = User.Role.CUSTOMER;
+    private Long id;
     
     // Gettery i settery
     public String getUsername() { return username; }
@@ -38,6 +39,8 @@ public class RegisterRequest {
     
     public String getLastName() { return lastName; }
     public void setLastName(String lastName) { this.lastName = lastName; }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     
     public User.Role getRole() { return role; }
     public void setRole(User.Role role) { this.role = role; }
