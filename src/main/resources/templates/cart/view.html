@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Koszyk</title>
+    <meta charset="UTF-8" />
+</head>
+<body>
+<h1>Twój koszyk</h1>
+
+<div th:if="${cartItems == null or #lists.isEmpty(cartItems)}">
+    Koszyk jest pusty.
+</div>
+
+<ul th:if="${cartItems != null and !#lists.isEmpty(cartItems)}">
+    <li th:each="item : ${cartItems}" th:text="|${item.product.name} - ${item.quantity}|"></li>
+</ul>
+</body>
+</html>

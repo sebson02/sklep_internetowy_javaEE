@@ -2,12 +2,18 @@ package org.example.sklep_internetowy.controller;
 
 import org.example.sklep_internetowy.model.Order;
 import org.example.sklep_internetowy.model.User;
+import org.example.sklep_internetowy.model.OrderProduct;
 import org.example.sklep_internetowy.service.OrderService;
 import org.example.sklep_internetowy.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpSession;
+import java.security.Principal;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import java.time.LocalDateTime;
+
 
 import java.util.List;
 
@@ -101,5 +107,33 @@ public class OrderController {
     public ResponseEntity<Long> getOrdersCountByUser(@PathVariable Long userId) {
         long count = orderService.getOrdersCountByUser(userId);
         return ResponseEntity.ok(count);
+    }
+
+    @PostMapping("/checkout")
+    public String checkout(HttpSession session, Principal principal, RedirectAttributes redirectAttributes) {
+        List<OrderProduct> cart = (List<OrderProduct>) session.getAttribute("cart");
+        if (cart == null || cart.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Koszyk jest pusty!");
+            return "redirect:/cart";
+        }
+
+        User user = userService.getByUsername(principal.getName());
+        // Ustaw order w każdym OrderProduct
+        Order order = new Order();
+        order.setUser(user);
+        order.setStatus(Order.Status.PENDING);
+        order.setCreatedAt(LocalDateTime.now());
+
+        for (OrderProduct op : cart) {
+            op.setOrder(order);
+        }
+        order.setOrderProducts(cart);
+
+        orderService.createOrder(order);  // Zapisuje wszystko do bazy
+
+        session.removeAttribute("cart");  // Wyczyść koszyk
+
+        redirectAttributes.addFlashAttribute("success", "Zamówienie złożone!");
+        return "redirect:/orders";  // albo gdzie chcesz po zamówieniu
     }
 }

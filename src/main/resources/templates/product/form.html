@@ -11,8 +11,7 @@
                 <div class="col-md-8 mx-auto">
                     <h1 class="mb-4" th:text="${product.id == null ? 'Dodaj nowy produkt' : 'Edytuj produkt'}">Formularz produktu</h1>
 
-                    <form th:action="${product.id == null ? '/products/add' : '/products/' + product.id + '/update'}" 
-                          method="post" class="needs-validation" novalidate>
+                    <form th:action="@{/products}" method="post" class="needs-validation" novalidate>
 
                         <!-- Hidden ID field for updates -->
                         <input type="hidden" name="id" th:value="${product.id}" />
