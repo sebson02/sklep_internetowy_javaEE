@@ -10,7 +10,7 @@
             <h1 class="mb-4">Lista produktów</h1>
 
             <!-- Admin/Manager Actions -->
-            <div class="mb-4" sec:authorize="hasAnyRole('ADMIN', 'MANAGER')">
+            <div class="mb-4 d-none" id="adminActions">
                 <a th:href="@{/products/new}" class="btn btn-primary">
                     <i class="bi bi-plus-circle"></i> Dodaj nowy produkt
                 </a>
@@ -69,6 +69,19 @@
                     </li>
                 </ul>
             </nav>
+
+            <script th:inline="javascript">
+                document.addEventListener('DOMContentLoaded', function () {
+                    const userData = JSON.parse(localStorage.getItem('user'));
+
+                    if (userData && (userData.role === 'ADMIN' || userData.role === 'MANAGER')) {
+                        const adminActions = document.getElementById('adminActions');
+                        if (adminActions) {
+                            adminActions.classList.remove('d-none');
+                        }
+                    }
+                });
+            </script>
         </div>
     </div>
 </body>

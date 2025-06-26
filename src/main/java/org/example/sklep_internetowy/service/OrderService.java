@@ -2,10 +2,13 @@ package org.example.sklep_internetowy.service;
 
 import org.example.sklep_internetowy.repository.OrderRepository;
 import org.example.sklep_internetowy.model.Order;
+import org.example.sklep_internetowy.model.OrderProduct;
 import org.example.sklep_internetowy.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 
 import java.util.List;
 
@@ -62,5 +65,21 @@ public class OrderService {
             order.setStatus(status);
             orderRepository.save(order);
         }
+    }
+
+    @Transactional
+    public Order createOrderFromCart(User user, List<OrderProduct> cartItems) {
+        Order order = new Order();
+        order.setUser(user);
+        order.setStatus(Order.Status.PENDING);
+        order.setCreatedAt(LocalDateTime.now());
+
+        for (OrderProduct item : cartItems) {
+            item.setOrder(order);
+        }
+
+        order.setOrderProducts(new ArrayList<>(cartItems));
+
+        return orderRepository.save(order);
     }
 }
