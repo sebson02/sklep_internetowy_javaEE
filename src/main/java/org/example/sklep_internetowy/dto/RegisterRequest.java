@@ -23,7 +23,16 @@ public class RegisterRequest {
     private String lastName;
     private User.Role role = User.Role.CUSTOMER;
     private Long id;
-    
+
+    public RegisterRequest(String username, String pw, String mail, String firstName, String surname) {
+            this.username = username;
+            this.password = pw;
+            this.email = mail;
+            this.firstName = firstName;
+            this.lastName = surname;
+            this.role = User.Role.CUSTOMER;
+    }
+
     // Gettery i settery
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }

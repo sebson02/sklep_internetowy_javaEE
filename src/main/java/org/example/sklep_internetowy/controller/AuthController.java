@@ -22,13 +22,13 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     @Autowired
-    private AuthenticationManager authenticationManager; // DODAJ
+    public AuthenticationManager authenticationManager; // DODAJ
 
     @Autowired
-    private UserService userService;
+    public UserService userService;
 
     @Autowired
-    private JwtService jwtService; // DODAJ
+    public JwtService jwtService; // DODAJ
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) { // Zmiana na RegisterRequest

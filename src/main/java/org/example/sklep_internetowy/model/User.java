@@ -56,6 +56,26 @@ public class User implements UserDetails {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
+    public User() {
+        this.username = "user";
+        this.password = "password";
+        this.email = "email@email.com";
+        this.firstName = "1stname";
+        this.lastName = "2ndname";
+        this.role = Role.CUSTOMER;
+        this.isEnabled = true;
+        this.createdAt = LocalDateTime.now();
+    }
+    public User(String username, String password, String email, String firstName, String lastName, Role role) {
+        this.username = username;
+        this.password = password;
+        this.email = email;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.role = role;
+        this.isEnabled = true;
+        this.createdAt = LocalDateTime.now();
+    }
 
     // Gettery i settery
     public Long getId() { return id; }
