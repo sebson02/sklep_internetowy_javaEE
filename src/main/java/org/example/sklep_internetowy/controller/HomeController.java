@@ -13,4 +13,14 @@ public class HomeController {
         model.addAttribute("content", "fragments/home :: content");
         return "layout/main";
     }
+
+    @GetMapping("/login")
+    public String login() {
+        return "login";
+    }
+
+    @GetMapping("/register")
+    public String register() {
+        return "register";
+    }
 }

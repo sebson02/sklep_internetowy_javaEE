@@ -37,11 +37,11 @@ public class AuthController {
             if (!created) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("Username already exists");
             }
-            
+
             // DODAJ - automatyczne logowanie po rejestracji z tokenem JWT
             User user = userService.getByUsername(request.getUsername());
             String jwt = jwtService.generateToken(user);
-            
+
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new AuthResponse(jwt, user.getId(), user.getUsername(), 
                                          user.getEmail(), user.getRole()));
@@ -53,18 +53,41 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         try {
-            // ZMIANA - używaj AuthenticationManager zamiast własnej logiki
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            request.getUsername(),
-                            request.getPassword())
-            );
+            // First try to authenticate with Spring Security (BCrypt)
+            try {
+                Authentication authentication = authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(
+                                request.getUsername(),
+                                request.getPassword())
+                );
 
-            User user = (User) authentication.getPrincipal();
-            String jwt = jwtService.generateToken(user); // DODAJ JWT
+                User user = (User) authentication.getPrincipal();
+                String jwt = jwtService.generateToken(user);
 
-            return ResponseEntity.ok(new AuthResponse(jwt, user.getId(), user.getUsername(), 
-                                                     user.getEmail(), user.getRole()));
+                return ResponseEntity.ok(new AuthResponse(jwt, user.getId(), user.getUsername(), 
+                                                         user.getEmail(), user.getRole()));
+            } catch (AuthenticationException e) {
+                // If BCrypt authentication fails, try direct password check
+                User user = userService.getByUsername(request.getUsername());
+                if (user != null && user.getPassword().equals(request.getPassword())) {
+                    // If direct comparison works, update password to BCrypt
+                    userService.updatePassword(user, request.getPassword());
+
+                    // Now authenticate with the updated password
+                    Authentication authentication = authenticationManager.authenticate(
+                            new UsernamePasswordAuthenticationToken(
+                                    request.getUsername(),
+                                    request.getPassword())
+                    );
+
+                    String jwt = jwtService.generateToken(user);
+                    return ResponseEntity.ok(new AuthResponse(jwt, user.getId(), user.getUsername(), 
+                                                             user.getEmail(), user.getRole()));
+                }
+
+                // If both authentication methods fail
+                throw e;
+            }
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         }
@@ -78,7 +101,7 @@ public class AuthController {
                 String jwt = token.substring(7);
                 String username = jwtService.extractUsername(jwt);
                 User user = userService.getByUsername(username);
-                
+
                 if (jwtService.validateToken(jwt, user)) {
                     return ResponseEntity.ok("Token is valid");
                 }

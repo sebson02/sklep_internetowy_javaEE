@@ -6,6 +6,58 @@
 // Base URL for API endpoints
 const API_BASE_URL = '/api';
 
+// Auth API
+const AuthAPI = {
+    // Login user
+    login: async (username, password) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            });
+            return response;
+        } catch (error) {
+            console.error('Error during login:', error);
+            throw error;
+        }
+    },
+
+    // Register user
+    register: async (userData) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            });
+            return response;
+        } catch (error) {
+            console.error('Error during registration:', error);
+            throw error;
+        }
+    },
+
+    // Validate token
+    validateToken: async (token) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/validate`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            return response.ok;
+        } catch (error) {
+            console.error('Error validating token:', error);
+            return false;
+        }
+    }
+};
+
 // Order API
 const OrderAPI = {
     // Get all orders
@@ -231,6 +283,14 @@ const UserAPI = {
 };
 
 // Export the API objects
+window.AuthAPI = AuthAPI;
 window.OrderAPI = OrderAPI;
 window.ProductAPI = ProductAPI;
 window.UserAPI = UserAPI;
+
+// For backward compatibility
+window.api = {
+    login: AuthAPI.login,
+    register: AuthAPI.register,
+    validateToken: AuthAPI.validateToken
+};
